@@ -1,5 +1,5 @@
 {
-	"name": "Trading View Data Scrapper",
+	"name": "Cavok Schedule Watcher",
 	"dockerFile": "Dockerfile",
 
 	"settings": { 

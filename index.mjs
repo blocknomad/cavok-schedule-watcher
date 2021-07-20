@@ -1,83 +1,59 @@
-import express from "express";
 import puppeteer from "puppeteer";
-import cheerio from "cheerio";
-import cors from "cors";
-import moment from "moment-timezone";
 import fs from "fs";
 
-const app = express();
-const port = process.env.PORT || "3000";
+const LOGIN_PAGE_URL = "";
+const SCHEDULE_PAGE_URL = "";
 
-app.use(express.json());
-app.use(cors({ origin: "*" }));
+const USERNAME = "";
+const PASSWORD = "";
+const TYPE = "";
 
-app.post("/scrap", (req, res) => {
-	console.log("\nSTARTING NEW DATA SCRAP");
-	console.log(req.body)
+(async () => {
+  const browser = await puppeteer
+    .launch({
+      headless: false,
+      args: ["--no-sandbox", "--disable-setuid-sandbox"],
+    })
+  const page = await browser.newPage()
 
-	puppeteer
-		.launch({
-			headless: true,
-			args: ['--no-sandbox', '--disable-setuid-sandbox'],
-		})
-		.then(browser => browser.newPage())
-		.then(page => page.goto(req.body.url).then(() => page.content()))
-		.then(html => {
-			const getData = content => {
-				const { panes } =  content.layout === "s" ? content.charts[0] : content
-				
-				for (let pane in panes) {
-					for (let source in panes[pane].sources) {
-						if (panes[pane].sources[source].type === "MainSeries") return panes[pane].sources[source].bars.data;
-					}
-				}
-			}
+  await page.goto(LOGIN_PAGE_URL, { waitUntil: 'load' })
 
-			const $ = cheerio.load(html);
-			const options = $('.tv-chart-view').data('options');
-			const content = JSON.parse(options.content)
-			
-			fs.writeFile(`raw-scrappings/${options.id}.json`, JSON.stringify(options, null, 2), err => { if (err) throw err });
-			
-			const timezone = content.layout === "s" ? content.charts[0].timezone : content.timezone;
-			const data = getData(content);
-			
-			const selectKlinesFrom = moment.tz(req.body.from, timezone).valueOf() / 1000;
-			const selectKlinesTo = moment.tz(req.body.to, timezone).valueOf() / 1000;
-			
-			console.log("IDEA ID:", options.id);
-			console.log("IDEA TIMEZONE:", timezone);
-			
-			const klines = data.reduce((acc, { value }) => {
-				if (value[0] >= selectKlinesFrom && value[0] <= selectKlinesTo) {
-					return [...acc, {
-						t: value[0],
-						tf: moment.tz(value[0] * 1000, timezone).format("D MMM YYYY LTS"),
-						o: value[1],
-						h: value[2],
-						l: value[3],
-						c: value[4],
-					}]
-				} else {
-					return acc
-				}
-			}, [])
+  await page.type("[name=username]", USERNAME);
+  await page.type("[name=password]", PASSWORD);
+  await page.select("[name=tipo]", TYPE);
+  await page.click("[type=submit]");
 
-			fs.writeFile(`scrappings/${options.id}.json`, JSON.stringify({
-				id: options.id,
-				name: options.name,
-				publishedUrl: options.publishedUrl,
-				klines,
-			}, null, 2), (err) => {
-				if (err) throw err;
+  await page.goto(SCHEDULE_PAGE_URL, { waitUntil: 'load' });
 
-				console.log(`COMPLETED SCRAPPING AND SAVING ${options.id}.json \n\n`);
-			})
-		})
-		.catch(console.error)
-		.finally(() => res.send());
-});
+  const ax = await page.evaluate(() => {
+    const TIME_SLOTS = ['08:30', '10:00', '11:30', '13:00', '14:30', '16:00'];
 
-app.listen(port, '0.0.0.0', () => {
-	console.log(`server listening at http://0.0.0.0:${port}`);
-});
+    // get schedule rows
+    const rows = document.querySelectorAll('td:first-child strong');
+    
+    // filter next 14 days C150 schedule rows  
+    const rowsC150 = [...rows].filter(element => element.innerText === 'C150-L').slice(0, 25);
+    const availableTimeSlots = [];
+
+    rowsC150.map(rowC150 => {
+      // get time slots from 8:30 to 16:00
+      const timeSlots = [...rowC150.parentElement.parentElement.parentElement.children].slice(2, -2);
+
+      // find available time slots
+      timeSlots.map((timeSlot, i) => {
+        if (timeSlot.querySelector('p:first-child').innerText.toUpperCase() === 'AVALIABLE') {
+          availableTimeSlots.push({
+            date: rowC150.closest('table').children[0].children[0].children[0].childNodes[0].textContent.trim(),
+            time: TIME_SLOTS[i],
+            status: timeSlot.querySelector('p:first-child').innerText.toUpperCase()
+          })
+        }
+      });
+    });
+
+    return availableTimeSlots
+  });
+
+  console.log('ax', ax)
+  // fs.writeFile(`./${new Date().getMilliseconds()}.json`, JSON.stringify(ax, null, 2), err => { if (err) throw err });
+})()
