@@ -11,6 +11,8 @@ const USERNAME = process.env.USERNAME;
 const PASSWORD = process.env.PASSWORD;
 const TYPE = process.env.TYPE;
 
+let notifiedAvailableTimeSlots = [];
+
 const jobFn = async () => {
   let browser;
 
@@ -34,7 +36,7 @@ const jobFn = async () => {
 
     const availableTimeSlots = await page.evaluate(() => {
       const TIME_SLOTS = ['08:30', '10:00', '11:30', '13:00', '14:30', '16:00'];
-      const EVALUATE_NEXT_N_DAYS = 40;
+      const EVALUATE_NEXT_N_DAYS = 20;
       const ACFT = 'C150-L';
 
       // get schedule rows
@@ -62,17 +64,22 @@ const jobFn = async () => {
       return availableTimeSlots
     });
 
-    console.log(new Date(), availableTimeSlots)
-    const groupedByDateAvailableTimeSlots = _.groupBy(availableTimeSlots, 'date')
-    
-    if (Object.keys(groupedAvailableTimeSlots).length > 0) {
-      Telegram.sendMessage(
-        `<b>${availableTimeSlots.length} novos horários disponíveis:</b>\n\n` +
-        Object.keys(groupedByDateAvailableTimeSlots).map((date) =>
-          `<b>${date.substr(-2)}/${date.substr(-5, 2)}</b>   ${groupedByDateAvailableTimeSlots[date].map(({ time }) => time).join(', ')}`
-        ).join('\n')
-      )
-    }
+    const unnotifiedAvailableTimeSlots = _.differenceWith(availableTimeSlots, notifiedAvailableTimeSlots, _.isEqual);
+
+    console.log(new Date(), availableTimeSlots, `${unnotifiedAvailableTimeSlots.length} new slots`)
+
+    if (unnotifiedAvailableTimeSlots.length === 0) return;
+
+    const unnotifiedAvailableTimeSlotsGroupedByDate = _.groupBy(unnotifiedAvailableTimeSlots, 'date');
+
+    Telegram.sendMessage(
+      `<b>${availableTimeSlots.length} novos horários disponíveis:</b>\n\n` +
+      Object.keys(unnotifiedAvailableTimeSlotsGroupedByDate).map((date) =>
+        `<b>${date.substr(-2)}/${date.substr(-5, 2)}</b>   ${unnotifiedAvailableTimeSlotsGroupedByDate[date].map(({ time }) => time).join(', ')}`
+      ).join('\n')
+    )
+
+    notifiedAvailableTimeSlots = availableTimeSlots;
   } catch (error) {
     console.log(error)
   } finally {
@@ -80,7 +87,8 @@ const jobFn = async () => {
   }
 }
 
-jobFn();
-// const job = new CronJob('*/1 * * * *', jobFn, null, true, 'America/Sao_Paulo');
+// jobFn();
 
-// job.start();
+const job = new CronJob('*/10 * * * *', jobFn, null, true, 'America/Sao_Paulo');
+
+job.start();
