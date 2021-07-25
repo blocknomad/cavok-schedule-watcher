@@ -1,6 +1,6 @@
 build:
   docker:
-    web: Dockerfile.heroku
+    worker: Dockerfile
 run:
-  web: npm run start:without-dotenv
+  worker: npm run start:without-dotenv
   

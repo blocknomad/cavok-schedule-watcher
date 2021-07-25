@@ -42,7 +42,7 @@ const jobFn = async () => {
       // get schedule rows
       const rows = document.querySelectorAll('td:first-child strong');
 
-      // filter next N days acft schedule rows  
+      // filter next N days of the acft schedule rows  
       const rowsAcft = [...rows].filter(element => element.innerText === ACFT).slice(0, EVALUATE_NEXT_N_DAYS);
       const availableTimeSlots = [];
 
@@ -50,7 +50,7 @@ const jobFn = async () => {
         // get time slots from 8:30 to 16:00
         const timeSlots = [...rowAcft.parentElement.parentElement.parentElement.children].slice(2, -2);
 
-        // find available time slots
+        // find available time slots inside desired time range
         timeSlots.map((timeSlot, i) => {
           if (timeSlot.querySelector('p:first-child').innerText.toUpperCase() === 'AVALIABLE') {
             availableTimeSlots.push({
@@ -87,4 +87,5 @@ const jobFn = async () => {
   }
 }
 
+// run every 10 minutes from 6am to 11pm
 new CronJob('*/10 6-23 * * *', jobFn, null, true, 'America/Sao_Paulo', null, true);
