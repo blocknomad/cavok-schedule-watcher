@@ -2,7 +2,7 @@ import puppeteer from "puppeteer";
 import _ from "lodash";
 import { CronJob } from "cron";
 
-import Telegram from "./telegram.mjs";
+import Telegram from "./telegram.js";
 
 const LOGIN_PAGE_URL = process.env.LOGIN_PAGE_URL;
 const SCHEDULE_PAGE_URL = process.env.SCHEDULE_PAGE_URL;
@@ -73,7 +73,7 @@ const jobFn = async () => {
     const unnotifiedAvailableTimeSlotsGroupedByDate = _.groupBy(unnotifiedAvailableTimeSlots, 'date');
 
     Telegram.sendMessage(
-      `<b>${availableTimeSlots.length} novos horários disponíveis:</b>\n\n` +
+      `<b>${availableTimeSlots.length} ${availableTimeSlots.length === 1 ? 'novo horário disponível' : 'novos horários disponíveis'}:</b>\n\n` +
       Object.keys(unnotifiedAvailableTimeSlotsGroupedByDate).map((date) =>
         `<b>${date.substr(-2)}/${date.substr(-5, 2)}</b>   ${unnotifiedAvailableTimeSlotsGroupedByDate[date].map(({ time }) => time).join(', ')}`
       ).join('\n')

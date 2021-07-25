@@ -1,13 +1,16 @@
 {
   "name": "cavok-schedule-watcher",
   "version": "1.0.0",
+  "type": "module",
   "description": "Cavok Schedule Watcher bot",
   "repository": {
+    "type": "git",
+    "url": "https://github.com/yurijean/cavok-schedule-watcher.git"
   },
   "main": "index.mjs",
   "scripts": {
-    "start": "node -r dotenv/config src/index.mjs",
-    "start:without-dotenv": "node src/index.mjs"
+    "start": "node -r dotenv/config src/index.js",
+    "start:without-dotenv": "node src/index.js"
   },
   "author": "",
   "license": "ISC",
