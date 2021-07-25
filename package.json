@@ -1,11 +1,13 @@
 {
   "name": "cavok-schedule-watcher",
   "version": "1.0.0",
-  "description": "",
+  "description": "Cavok Schedule Watcher bot",
+  "repository": {
+  },
   "main": "index.mjs",
   "scripts": {
     "start": "node -r dotenv/config src/index.mjs",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "start:without-dotenv": "node src/index.mjs"
   },
   "author": "",
   "license": "ISC",

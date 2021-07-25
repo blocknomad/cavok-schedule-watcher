@@ -36,7 +36,7 @@ const jobFn = async () => {
 
     const availableTimeSlots = await page.evaluate(() => {
       const TIME_SLOTS = ['08:30', '10:00', '11:30', '13:00', '14:30', '16:00'];
-      const EVALUATE_NEXT_N_DAYS = 20;
+      const EVALUATE_NEXT_N_DAYS = 25;
       const ACFT = 'C150-L';
 
       // get schedule rows
@@ -87,8 +87,4 @@ const jobFn = async () => {
   }
 }
 
-// jobFn();
-
-const job = new CronJob('*/10 * * * *', jobFn, null, true, 'America/Sao_Paulo');
-
-job.start();
+new CronJob('*/10 6-23 * * *', jobFn, null, true, 'America/Sao_Paulo', null, true);
