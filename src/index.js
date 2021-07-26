@@ -13,7 +13,7 @@ const TYPE = process.env.TYPE;
 
 let notifiedAvailableTimeSlots = [];
 
-const jobFn = async () => {
+const crawler = async () => {
   let browser;
 
   try {
@@ -66,14 +66,14 @@ const jobFn = async () => {
 
     const unnotifiedAvailableTimeSlots = _.differenceWith(availableTimeSlots, notifiedAvailableTimeSlots, _.isEqual);
 
-    console.log(new Date(), availableTimeSlots, `${unnotifiedAvailableTimeSlots.length} new slots`)
+    console.log(new Date(), `${unnotifiedAvailableTimeSlots.length} new time slots found`, unnotifiedAvailableTimeSlots)
 
     if (unnotifiedAvailableTimeSlots.length === 0) return;
 
     const unnotifiedAvailableTimeSlotsGroupedByDate = _.groupBy(unnotifiedAvailableTimeSlots, 'date');
 
     Telegram.sendMessage(
-      `<b>${availableTimeSlots.length} ${availableTimeSlots.length === 1 ? 'novo horário disponível' : 'novos horários disponíveis'}:</b>\n\n` +
+      `<b>${unnotifiedAvailableTimeSlots.length} ${unnotifiedAvailableTimeSlots.length === 1 ? 'novo horário disponível' : 'novos horários disponíveis'}:</b>\n\n` +
       Object.keys(unnotifiedAvailableTimeSlotsGroupedByDate).map((date) =>
         `<b>${date.substr(-2)}/${date.substr(-5, 2)}</b>   ${unnotifiedAvailableTimeSlotsGroupedByDate[date].map(({ time }) => time).join(', ')}`
       ).join('\n')
@@ -88,4 +88,4 @@ const jobFn = async () => {
 }
 
 // run every 10 minutes from 6am to 11pm
-new CronJob('*/10 6-23 * * *', jobFn, null, true, 'America/Sao_Paulo', null, true);
+new CronJob('*/10 6-23 * * *', crawler, null, true, 'America/Sao_Paulo', null, true);
