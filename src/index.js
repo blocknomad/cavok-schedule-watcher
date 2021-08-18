@@ -35,8 +35,8 @@ const crawler = async () => {
     await page.goto(SCHEDULE_PAGE_URL, { waitUntil: 'networkidle2' });
 
     const availableTimeSlots = await page.evaluate(() => {
-      const TIME_SLOTS = ['08:30', '10:00', '11:30', '13:00', '14:30', '16:00'];
-      const EVALUATE_NEXT_N_DAYS = 30;
+      const TIME_SLOTS = ['07:00', '08:30', '10:00', '11:30', '13:00', '14:30', '16:00'];
+      const EVALUATE_NEXT_N_DAYS = 25;
       const ACFT = 'C150-L';
 
       // get schedule rows
@@ -47,8 +47,8 @@ const crawler = async () => {
       const availableTimeSlots = [];
 
       rowsAcft.map(rowAcft => {
-        // get time slots from 8:30 to 16:00
-        const timeSlots = [...rowAcft.parentElement.parentElement.parentElement.children].slice(2, -4);
+        // get time slots from 07:00 to 16:00
+        const timeSlots = [...rowAcft.parentElement.parentElement.parentElement.children].slice(1, -4);
 
         // find available time slots inside desired time range
         timeSlots.map((timeSlot, i) => {
