@@ -35,7 +35,7 @@ const crawler = async () => {
     await page.goto(SCHEDULE_PAGE_URL, { waitUntil: 'networkidle2' });
 
     const availableTimeSlots = await page.evaluate(() => {
-      const TIME_SLOTS = ['07:00', '08:30', '10:00', '11:30', '13:00', '14:30', '16:00'];
+      const TIME_SLOTS = ['06:30', '08:00', '09:30', '11:00', '12:30', '14:00', '15:30', '17:00'];
       const EVALUATE_NEXT_N_DAYS = 25;
       const ACFT = 'C150-L';
 
@@ -44,16 +44,18 @@ const crawler = async () => {
 
       // filter next N days of the acft schedule rows  
       const rowsAcft = [...rows].filter(element => element.innerText === ACFT).slice(0, EVALUATE_NEXT_N_DAYS);
+
       const availableTimeSlots = [];
 
-      rowsAcft.map(rowAcft => {
+      rowsAcft.map((rowAcft, rowAcftIndex) => {
         // get time slots from 07:00 to 16:00
-        const timeSlots = [...rowAcft.parentElement.parentElement.parentElement.children].slice(1, -4);
+        const timeSlots = [...rowAcft.parentElement.parentElement.parentElement.children].slice(1, -3);
 
         // find available time slots inside desired time range
         timeSlots.map((timeSlot, i) => {
           if (timeSlot.querySelector('p:first-child').innerText.toUpperCase() === 'AVALIABLE') {
             availableTimeSlots.push({
+              acft: rowAcftIndex % 2,
               date: rowAcft.closest('table').children[0].children[0].children[0].childNodes[0].textContent.trim(),
               time: TIME_SLOTS[i],
             })
@@ -70,13 +72,25 @@ const crawler = async () => {
 
     if (unnotifiedAvailableTimeSlots.length === 0) return;
 
-    const unnotifiedAvailableTimeSlotsGroupedByDate = _.groupBy(unnotifiedAvailableTimeSlots, 'date');
+    const notificationSections = [{
+      name: 'Barra 1',
+      list: _.groupBy(unnotifiedAvailableTimeSlots.filter(({ acft }) => acft === 0), 'date')
+    }, {
+      name: 'Barra 2',
+      list: _.groupBy(unnotifiedAvailableTimeSlots.filter(({ acft }) => acft === 1), 'date')
+    }]
+
+    const generateNotificationSectionText = ({ name, list }) =>
+      `\n\n${name}\n\n` +
+      Object.keys(list).map((date) =>
+        `<b>${date.substr(-2)}/${date.substr(-5, 2)}</b>   ${list[date].map(({ time }) => time).join(', ')}`
+      ).join('\n')
 
     Telegram.sendMessage(
-      `<b>${unnotifiedAvailableTimeSlots.length} ${unnotifiedAvailableTimeSlots.length === 1 ? 'novo horário disponível' : 'novos horários disponíveis'}:</b>\n\n` +
-      Object.keys(unnotifiedAvailableTimeSlotsGroupedByDate).map((date) =>
-        `<b>${date.substr(-2)}/${date.substr(-5, 2)}</b>   ${unnotifiedAvailableTimeSlotsGroupedByDate[date].map(({ time }) => time).join(', ')}`
-      ).join('\n')
+      `<b>${unnotifiedAvailableTimeSlots.length} ${unnotifiedAvailableTimeSlots.length === 1 ? 'novo horário disponível' : 'novos horários disponíveis'}:</b>` +
+      notificationSections.map(notificationSection =>
+        Object.keys(notificationSection.list).length > 0 ? generateNotificationSectionText(notificationSection) : ''
+      )
     )
 
     notifiedAvailableTimeSlots = availableTimeSlots;
