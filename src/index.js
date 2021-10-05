@@ -88,9 +88,9 @@ const crawler = async () => {
 
     Telegram.sendMessage(
       `<b>${unnotifiedAvailableTimeSlots.length} ${unnotifiedAvailableTimeSlots.length === 1 ? 'novo horário disponível' : 'novos horários disponíveis'}:</b>` +
-      notificationSections.map(notificationSection =>
-        Object.keys(notificationSection.list).length > 0 ? generateNotificationSectionText(notificationSection) : ''
-      )
+      notificationSections.reduce((acc, notificationSection) =>
+        acc + (Object.keys(notificationSection.list).length > 0 ? generateNotificationSectionText(notificationSection) : '')
+      , '')
     )
 
     notifiedAvailableTimeSlots = availableTimeSlots;
